@@ -80,7 +80,7 @@ public class MessageDao implements DaoInterface<Message> {
      */
     @Override
     public Message update(Message message) {
-        String sql = "UPDATE Message SET message_text = ?, time_posted_epoch = ? WHERE message_id = ?";
+        String sql = "UPDATE Message SET message_text = ? WHERE message_id = ?";
         Connection conn = null;
         PreparedStatement pstmt = null;
 
@@ -89,7 +89,6 @@ public class MessageDao implements DaoInterface<Message> {
             pstmt = conn.prepareStatement(sql);
 
             pstmt.setString(1, message.getMessage_text());
-            pstmt.setLong(2, message.getTime_posted_epoch());
             pstmt.setInt(3, message.getMessage_id());
             pstmt.executeUpdate();
 

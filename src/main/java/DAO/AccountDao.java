@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.mindrot.jbcrypt.BCrypt;
+
 /* 
  * Implementation of DaoInterface for Account model.
  * Follows DaoInterface method implementation PLUS:
@@ -37,8 +39,10 @@ public class AccountDao implements DaoInterface<Account> {
             conn = ConnectionUtil.getConnection();
             pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 
+            String hashedPassword = BCrypt.hashpw(account.getPassword(), BCrypt.gensalt());
+
             pstmt.setString(1, account.getUsername());
-            pstmt.setString(2, account.getPassword());
+            pstmt.setString(2, hashedPassword);
             pstmt.executeUpdate();
 
             generatedKeys = pstmt.getGeneratedKeys();
@@ -88,8 +92,10 @@ public class AccountDao implements DaoInterface<Account> {
             conn = ConnectionUtil.getConnection();
             pstmt = conn.prepareStatement(sql);
 
+            String hashedPassword = BCrypt.hashpw(account.getPassword(), BCrypt.gensalt());
+
             pstmt.setString(1, account.getUsername());
-            pstmt.setString(2, account.getPassword());
+            pstmt.setString(2, hashedPassword);
             pstmt.setInt(3, account.getAccount_id());
             pstmt.executeUpdate();
 

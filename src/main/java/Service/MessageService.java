@@ -77,4 +77,16 @@ public class MessageService implements ServiceInterface<Message> {
     public List<Message> getAllByUserId(int id) {
         return messageDao.getAllByUserId(id);
     }
+
+    /**
+     * Validates message text body input
+     * if the message text is empty or over 255 characters, return false, else true
+     * @param message The message to be validated
+     * @return a boolean. true if valid, false if invalid
+     */
+    public boolean isValidText(Message message) {
+        return (message.getMessage_text() == null
+                || message.getMessage_text().isBlank()
+                || message.getMessage_text().length() >= 255) ? false : true;
+    }
 }

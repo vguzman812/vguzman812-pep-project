@@ -1,5 +1,6 @@
 package Controller;
 
+import Service.AccountService;
 import Service.MessageService;
 import Model.Message;
 
@@ -16,6 +17,7 @@ import java.util.Optional;
 public class MessageController {
 
     private final MessageService messageService = new MessageService();
+    private final AccountService accountService = new AccountService();
 
     /**
      * Attaches the routes to the provided Javalin app.
@@ -25,10 +27,10 @@ public class MessageController {
     public void attachRoutes(Javalin app) {
         app.post("/messages", this::handleCreateMessage);
         app.get("/messages", this::handleGetAllMessages);
-        app.get("/messages/:message_id", this::handleGetMessageById);
-        app.delete("/messages/:message_id", this::handleDeleteMessage);
-        app.patch("/messages/:message_id", this::handleUpdateMessage);
-        app.get("/accounts/:account_id/messages", this::handleGetMessagesByUserId);
+        app.get("/messages/{message_id}", this::handleGetMessageById);
+        app.delete("/messages/{message_id}", this::handleDeleteMessage);
+        app.patch("/messages/{message_id}", this::handleUpdateMessage);
+        app.get("/accounts/{account_id}/messages", this::handleGetMessagesByUserId);
     }
 
     /**
@@ -36,19 +38,25 @@ public class MessageController {
      * Parses request body to create a Message object,
      * validates it, and if valid, creates a new message in the database.
      * Responds with the newly created message or an error message.
+     * Error codes: 400, 200, 500
      *
      * @param ctx The context object representing the HTTP request and response.
      */
     private void handleCreateMessage(Context ctx) {
         try {
             Message message = ctx.bodyAsClass(Message.class);
-            if (message.getMessage_text() == null || message.getMessage_text().length() >= 255) {
-                ctx.status(400).result("Invalid message content");
+            // check if message_text is not valid then stop creation return 400
+            if (!messageService.isValidText(message)) {
+                ctx.status(400);
                 return;
             }
-            // Assuming posted_by is validated elsewhere (e.g., via authentication)
+            // check if user exists in db before creating message
+            if (accountService.get(message.getPosted_by()).isEmpty()) {
+                ctx.status(400);
+                return;
+            }
             Message createdMessage = messageService.create(message);
-            ctx.status(201).json(createdMessage);
+            ctx.status(200).json(createdMessage);
         } catch (Exception e) {
             ctx.status(500).result("Server error while processing message creation");
         }
@@ -82,9 +90,9 @@ public class MessageController {
             int messageId = Integer.parseInt(ctx.pathParam("message_id"));
             Optional<Message> message = messageService.get(messageId);
             if (message.isPresent()) {
-                ctx.json(message.get());
+                ctx.status(200).json(message.get());
             } else {
-                ctx.status(404).result("Message not found");
+                ctx.status(200);
             }
         } catch (Exception e) {
             ctx.status(500).result("Server error while fetching message by ID");
@@ -96,6 +104,7 @@ public class MessageController {
      * Responds with the deleted message if successful,
      * no content if the message does not exist,
      * or an error message if an issue occurs.
+     * status: 200, 500
      *
      * @param ctx The context object representing the HTTP request and response.
      */
@@ -104,9 +113,9 @@ public class MessageController {
             int messageId = Integer.parseInt(ctx.pathParam("message_id"));
             Optional<Message> deletedMessage = messageService.delete(messageId);
             if (deletedMessage.isPresent()) {
-                ctx.json(deletedMessage.get());
+                ctx.status(200).json(deletedMessage.get());
             } else {
-                ctx.status(204); // No Content
+                ctx.status(200); // message doesnt exist in db so we just return status
             }
         } catch (Exception e) {
             ctx.status(500).result("Server error while deleting message");
@@ -125,10 +134,14 @@ public class MessageController {
         try {
             int messageId = Integer.parseInt(ctx.pathParam("message_id"));
             Message updatedInfo = ctx.bodyAsClass(Message.class);
-            if (updatedInfo.getMessage_text() == null || updatedInfo.getMessage_text().length() >= 255) {
-                ctx.status(400).result("Invalid message content");
+
+            // if the text is not valid then return 400 and stop update
+            if (!messageService.isValidText(updatedInfo)) {
+                ctx.status(400);
                 return;
             }
+
+            // if the message exists then let's update it, else stop update
             Optional<Message> existingMessage = messageService.get(messageId);
             if (existingMessage.isPresent()) {
                 Message messageToUpdate = existingMessage.get();
@@ -136,7 +149,7 @@ public class MessageController {
                 Message updatedMessage = messageService.update(messageToUpdate);
                 ctx.json(updatedMessage);
             } else {
-                ctx.status(404).result("Message not found");
+                ctx.status(400);
             }
         } catch (Exception e) {
             ctx.status(500).result("Server error while updating message");

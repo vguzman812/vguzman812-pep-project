@@ -75,7 +75,25 @@ public class AccountService implements ServiceInterface<Account> {
      * @param username The username to search for.
      * @return An Optional containing the Account if found, or empty if not found.
      */
-    public Optional<Account> findByUsername(String username) {
-        return accountDao.findByUsername(username);
+    public Optional<Account> getByUsername(String username) {
+        return accountDao.getByUsername(username);
+    }
+        /**
+     * Validates registration input
+     * if the username or password is empty or over 255 characters,
+     * or if password is less than 4 characters
+     * return false, else true
+     * @param registrationAccount The account with information to be validated
+     * @return a boolean. true if valid, false if invalid
+     */
+    public boolean isValidRegistrationInput(Account registrationAccount) {
+        // if any of these hit, then the input is invalid
+        return (registrationAccount.getUsername() == null 
+        || registrationAccount.getUsername().isBlank()
+        || registrationAccount.getUsername().length() >= 255 
+        || registrationAccount.getPassword() == null 
+        || registrationAccount.getPassword().isBlank()
+        || registrationAccount.getPassword().length() >= 255 
+        || registrationAccount.getPassword().length() < 4) ? false: true;
     }
 }

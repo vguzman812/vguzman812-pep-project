@@ -269,7 +269,7 @@ public class AccountDao implements DaoInterface<Account> {
      * @param username The username of the Account to find.
      * @return An Optional containing the found Account or empty if not found.
      */
-    public Optional<Account> findByUsername(String username) {
+    public Optional<Account> getByUsername(String username) {
         String sql = "SELECT * FROM Account WHERE username = ?";
         Connection conn = null;
         PreparedStatement pstmt = null;

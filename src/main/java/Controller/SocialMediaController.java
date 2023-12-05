@@ -26,6 +26,7 @@ public class SocialMediaController {
 
         accountController.attachRoutes(app);
         messageController.attachRoutes(app);
+        
 
         return app;
     }

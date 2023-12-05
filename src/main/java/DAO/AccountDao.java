@@ -288,7 +288,7 @@ public class AccountDao implements DaoInterface<Account> {
                         rs.getString("password")));
             }
         } catch (SQLException e) {
-            e.printStackTrace(); // Handle exception
+            throw new RuntimeException("Error accessing database", e);
         } finally {
             if (rs != null)
                 try {

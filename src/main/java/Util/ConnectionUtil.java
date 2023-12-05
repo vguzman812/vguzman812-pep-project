@@ -3,10 +3,12 @@ package Util;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import org.h2.jdbcx.JdbcDataSource;
 import org.h2.tools.RunScript;
+import org.mindrot.jbcrypt.BCrypt;
 
 /**
  * The ConnectionUtil class will be utilized to create an active connection to
@@ -32,7 +34,8 @@ public class ConnectionUtil {
 	private static String password = "sa";
 
 	/**
-	 * DataSource for pooling. Pooling enables the creation of multiple connections when connections are closed.
+	 * DataSource for pooling. Pooling enables the creation of multiple connections
+	 * when connections are closed.
 	 */
 	private static JdbcDataSource pool = new JdbcDataSource();
 
@@ -64,11 +67,40 @@ public class ConnectionUtil {
 	 * file in resources. This will be performed before every test.
 	 */
 	public static void resetTestDatabase() {
+		Connection conn = null;
 		try {
+			conn = getConnection();
+			// Run the initial script to create tables
 			FileReader sqlReader = new FileReader("src/main/resources/SocialMedia.sql");
-			RunScript.execute(getConnection(), sqlReader);
+			RunScript.execute(conn, sqlReader);
+
+			// Hash the password
+			String hashedPassword = BCrypt.hashpw("password", BCrypt.gensalt());
+
+			// Insert the test user with the hashed password
+			String insertUserSql = "INSERT INTO account (username, password) VALUES (?, ?)";
+			try (PreparedStatement pstmt = conn.prepareStatement(insertUserSql)) {
+				pstmt.setString(1, "testuser1");
+				pstmt.setString(2, hashedPassword);
+				pstmt.executeUpdate();
+			}
+
+			// Insert the test message
+			String insertMessageSql = "INSERT INTO message (posted_by, message_text, time_posted_epoch) VALUES (1,'test message 1',1669947792)";
+			try (PreparedStatement pstmt = conn.prepareStatement(insertMessageSql)) {
+				pstmt.executeUpdate();
+			}
+
 		} catch (SQLException | FileNotFoundException e) {
 			e.printStackTrace();
+		} finally {
+			if (conn != null) {
+				try {
+					conn.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 }

@@ -14,7 +14,8 @@ import java.util.List;
 import java.util.Optional;
 
 /* 
- * Implementation of DaoInterface for Message model.
+ * Implementation of DaoInterface for Message model PLUS:
+ *     public List<Message> getAllByUserId(int id)
 */
 public class MessageDao implements DaoInterface<Message> {
 
@@ -260,4 +261,55 @@ public class MessageDao implements DaoInterface<Message> {
         return Optional.empty();
     }
 
+    /**
+     * Retrieves all messages posted by a specific user.
+     *
+     * @param id The ID of the user whose messages are to be retrieved.
+     * @return A List of Message objects posted by the specified user.
+     */
+    public List<Message> getAllByUserId(int id) {
+        List<Message> messages = new ArrayList<>();
+        String sql = "SELECT * FROM Message WHERE posted_by = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = ConnectionUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            pstmt.setInt(1, id);
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                messages.add(new Message(
+                        rs.getInt("message_id"),
+                        rs.getInt("posted_by"),
+                        rs.getString("message_text"),
+                        rs.getLong("time_posted_epoch")));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (rs != null)
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            if (pstmt != null)
+                try {
+                    pstmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            if (conn != null)
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+        }
+        return messages;
+    }
 }

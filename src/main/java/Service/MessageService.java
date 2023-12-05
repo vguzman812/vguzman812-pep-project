@@ -67,4 +67,14 @@ public class MessageService implements ServiceInterface<Message> {
     public List<Message> getAll() {
         return messageDao.getAll();
     }
+
+    /**
+     * Retrieves all messages posted by a specific user.
+     *
+     * @param id The ID of the user whose messages are to be retrieved.
+     * @return A List of Message objects posted by the specified user.
+     */
+    public List<Message> getAllByUserId(int id) {
+        return messageDao.getAllByUserId(id);
+    }
 }

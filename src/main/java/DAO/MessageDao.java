@@ -41,8 +41,16 @@ public class MessageDao implements DaoInterface<Message> {
             pstmt.setLong(3, message.getTime_posted_epoch());
             pstmt.executeUpdate();
 
+            // Retrieve the auto-generated keys (primary keys) created by the database
             generatedKeys = pstmt.getGeneratedKeys();
+            // Check if a generated key is available
             if (generatedKeys.next()) {
+                /*
+                 * The db automatically generates a primary key. We need to get that and
+                 * set the message_id property in our new Message object here
+                 * We do that by getting the first column in our new row (i.e. the primary key)
+                 * then using that value to setMessage_id on our new Message object
+                 */
                 message.setMessage_id(generatedKeys.getInt(1));
             } else {
                 throw new SQLException("Creating message failed, no ID obtained.");

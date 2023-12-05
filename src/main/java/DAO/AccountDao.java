@@ -45,8 +45,16 @@ public class AccountDao implements DaoInterface<Account> {
             pstmt.setString(2, hashedPassword);
             pstmt.executeUpdate();
 
+            // Retrieve the auto-generated keys (primary keys) created by the database
             generatedKeys = pstmt.getGeneratedKeys();
+            // Check if a generated key is available
             if (generatedKeys.next()) {
+                /*
+                 * The db automatically generates a primary key. We need to get that and
+                 * set the account_id property in our new Account object here
+                 * We do that by getting the first column in our new row (i.e. the primary key)
+                 * then using that value to setAccount_id on our new Account object
+                 */
                 account.setAccount_id(generatedKeys.getInt(1));
             } else {
                 throw new SQLException("Creating account failed, no ID obtained.");

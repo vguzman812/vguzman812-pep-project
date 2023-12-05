@@ -35,6 +35,8 @@ public class AccountController {
      * validates the input, and registers a new account if
      * valid input and no other user exists.
      * Responds with the created account or an error message.
+     * 
+     * Status codes: 200, 400, 500
      *
      * @param ctx The context object representing the HTTP request and response.
      */
@@ -67,22 +69,37 @@ public class AccountController {
      * Validates the provided credentials against stored accounts.
      * If successful, responds with the account details;
      * otherwise, responds with an error.
+     * 
+     * status codes: 200, 401, 500
      *
      * @param ctx The context object representing the HTTP request and response.
      */
     private void handleLogin(Context ctx) {
         try {
-            Account loginAccount = ctx.bodyAsClass(Account.class);
-            Optional<Account> accountOptional = accountService.getByUsername(loginAccount.getUsername());
+            Account clientAccount = ctx.bodyAsClass(Account.class);
+            Optional<Account> dbAccount = accountService.getByUsername(clientAccount.getUsername());
 
             // check that account exists and passwords match
-            if (accountOptional.isPresent()
-                    && BCrypt.checkpw(loginAccount.getPassword(), accountOptional.get().getPassword())) {
-                        // I'm changing the password from encrypted to plain text because of some dumb test case.
-                Account successfulAccount = accountOptional.get();
+            if (dbAccount.isPresent()
+                    && BCrypt.checkpw(clientAccount.getPassword(), dbAccount.get().getPassword())) {
+                // I'm changing the password from encrypted to plain text because of some dumb
+                // test case.
+                Account successfulAccount = dbAccount.get();
                 successfulAccount.setPassword("password"); // in the real world we would just use the hashed password.
+
+                /*
+                 * TODO: Implement Session Token Logic
+                 * 1. Generate a unique session token (e.g., using UUID or JWT)
+                 * 2. Optionally store the session token on the server-side, associated with the
+                 * user's session or account
+                 * 3. Send the session token back to the client in the response (either in the
+                 * response body or as a header)
+                 * Note: Ensure secure transmission and storage of the token
+                 */
+
                 ctx.status(200).json(successfulAccount);
             } else {
+                // else user does not exist or passwords do not match
                 ctx.status(401);
             }
         } catch (Exception e) {

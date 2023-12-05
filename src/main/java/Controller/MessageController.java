@@ -12,7 +12,7 @@ import java.util.Optional;
 
 /**
  * This class handles the web endpoints related to message operations.
- * It utilizes the MessageService for business logic and data access.
+ * It utilizes both MessageService and AccountService for business logic and data access.
  */
 public class MessageController {
 
@@ -38,14 +38,17 @@ public class MessageController {
      * Parses request body to create a Message object,
      * validates it, and if valid, creates a new message in the database.
      * Responds with the newly created message or an error message.
-     * Error codes: 400, 200, 500
+     * 
+     * status codes: 200, 400, 500
      *
      * @param ctx The context object representing the HTTP request and response.
      */
     private void handleCreateMessage(Context ctx) {
         try {
             Message message = ctx.bodyAsClass(Message.class);
-            // check if message_text is not valid then stop creation return 400
+
+            // check if message_text is valid 
+            // if not valid then stop creation return 400
             if (!messageService.isValidText(message)) {
                 ctx.status(400);
                 return;
@@ -55,6 +58,8 @@ public class MessageController {
                 ctx.status(400);
                 return;
             }
+
+            // checks passed, create message
             Message createdMessage = messageService.create(message);
             ctx.status(200).json(createdMessage);
         } catch (Exception e) {
@@ -65,13 +70,15 @@ public class MessageController {
     /**
      * Handles requests for retrieving all messages.
      * Responds with a list of all messages from the database or an error message
+     * 
+     * status codes: 200, 500
      *
      * @param ctx The context object representing the HTTP request and response.
      */
     private void handleGetAllMessages(Context ctx) {
         try {
             List<Message> messages = messageService.getAll();
-            ctx.json(messages);
+            ctx.status(200).json(messages);
         } catch (Exception e) {
             ctx.status(500).result("Server error while fetching all messages");
         }
@@ -82,6 +89,8 @@ public class MessageController {
      * Responds with the requested message if found,
      * or a not found/error message if the message does not exist or an issue
      * occurs.
+     * 
+     * status codes: 200, 500
      *
      * @param ctx The context object representing the HTTP request and response.
      */
@@ -92,6 +101,7 @@ public class MessageController {
             if (message.isPresent()) {
                 ctx.status(200).json(message.get());
             } else {
+                // no message with that id
                 ctx.status(200);
             }
         } catch (Exception e) {
@@ -104,7 +114,8 @@ public class MessageController {
      * Responds with the deleted message if successful,
      * no content if the message does not exist,
      * or an error message if an issue occurs.
-     * status: 200, 500
+     * 
+     * status codes: 200, 500
      *
      * @param ctx The context object representing the HTTP request and response.
      */
@@ -127,6 +138,8 @@ public class MessageController {
      * Responds with the updated message if successful,
      * a not found message if the message does not exist,
      * or an error message if an issue occurs.
+     * 
+     * status codes: 400, 500
      *
      * @param ctx The context object representing the HTTP request and response.
      */
@@ -146,9 +159,11 @@ public class MessageController {
             if (existingMessage.isPresent()) {
                 Message messageToUpdate = existingMessage.get();
                 messageToUpdate.setMessage_text(updatedInfo.getMessage_text());
+
                 Message updatedMessage = messageService.update(messageToUpdate);
                 ctx.json(updatedMessage);
             } else {
+                // no resource found
                 ctx.status(400);
             }
         } catch (Exception e) {
@@ -160,13 +175,15 @@ public class MessageController {
      * Handles requests for retrieving all messages posted by a specific user.
      * Responds with a list of messages or an error message if an issue occurs.
      *
+     * status codes: 200, 500
+     * 
      * @param ctx The context object representing the HTTP request and response.
      */
     private void handleGetMessagesByUserId(Context ctx) {
         try {
             int userId = Integer.parseInt(ctx.pathParam("account_id"));
             List<Message> messages = messageService.getAllByUserId(userId);
-            ctx.json(messages);
+            ctx.status(200).json(messages);
         } catch (Exception e) {
             ctx.status(500).result("Server error while fetching messages by user ID");
         }
